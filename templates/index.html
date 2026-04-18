@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClipGen AI - AttentionX</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        /* A little custom layout magic */
+        .hero { text-align: center; padding: 3rem 0 1rem 0; }
+        .hero p { color: #888; margin-bottom: 2rem; }
+        .video-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 1.5rem; 
+            margin-top: 2rem; 
+        }
+        video { 
+            width: 100%; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5); 
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        
+        <div class="hero">
+            <hgroup>
+                <h1>🎬 ClipGen AI</h1>
+                <p>Automated Content Repurposing Engine</p>
+            </hgroup>
+            <p>Upload a long-form video. Our AI will identify the emotional peaks, auto-crop to a vertical 9:16 aspect ratio, and inject viral hooks.</p>
+        </div>
+
+        <article>
+            <form id="uploadForm">
+                <fieldset>
+                    <label for="video">Select your horizontal video (MP4):</label>
+                    <input type="file" id="video" name="video" accept="video/mp4,video/x-m4v,video/*" required>
+                </fieldset>
+                <button type="submit" id="submitBtn">Generate Viral Clips 🚀</button>
+            </form>
+        </article>
+
+        <div id="loading" style="display: none; text-align: center; padding: 2rem;">
+            <button aria-busy="true" class="secondary outline">Processing video with Gemini & OpenCV... This might take a minute.</button>
+        </div>
+
+        <div class="video-grid" id="results"></div>
+
+    </main>
+
+    <script>
+        const form = document.getElementById("uploadForm");
+        const submitBtn = document.getElementById("submitBtn");
+        const loadingDiv = document.getElementById("loading");
+        const resultsDiv = document.getElementById("results");
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+
+            // 1. Lock the form and show the loading animation
+            submitBtn.disabled = true;
+            loadingDiv.style.display = "block";
+            resultsDiv.innerHTML = ""; // Clear old videos
+
+            const formData = new FormData(form);
+
+            try {
+                // 2. Send to backend
+                const res = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                const data = await res.json();
+
+                // 3. Handle errors or display videos
+                if (data.error) {
+                    alert("Error: " + data.error);
+                } else {
+                    data.clips.forEach(path => {
+                        // Create a clean "article" card for each video
+                        const article = document.createElement("article");
+                        const video = document.createElement("video");
+                        video.src = path;
+                        video.controls = true;
+                        
+                        article.appendChild(video);
+                        resultsDiv.appendChild(article);
+                    });
+                }
+            } catch (error) {
+                alert("Something went wrong connecting to the server!");
+            } finally {
+                // 4. Unlock the UI when done
+                submitBtn.disabled = false;
+                loadingDiv.style.display = "none";
+            }
+        };
+    </script>
+</body>
+</html>
